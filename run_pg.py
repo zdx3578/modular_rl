@@ -10,6 +10,7 @@ import argparse, sys, cPickle
 from tabulate import tabulate
 import shutil, os, logging
 import gym
+import datetime
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -41,7 +42,7 @@ if __name__ == "__main__":
         global COUNTER
         COUNTER += 1  
         # Print stats
-        print "*********** Iteration %i ****************" % COUNTER
+        print "*********** Iteration %i  %s ******************" % ( COUNTER , str(datetime.datetime.now()) )
         print tabulate(filter(lambda (k,v) : np.asarray(v).size==1, stats.items())) #pylint: disable=W0110
         # Store to hdf5
         if args.use_hdf:
