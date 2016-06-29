@@ -6,11 +6,12 @@ This script runs a policy gradient algorithm
 
 from gym.envs import make
 from modular_rl import *
-import argparse, sys, cPickle
+import argparse, sys, cPickle, h5py
 from tabulate import tabulate
 import shutil, os, logging
 import gym
 import datetime
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -18,6 +19,9 @@ if __name__ == "__main__":
     parser.add_argument("--env",required=True)
     parser.add_argument("--agent",required=True)
     parser.add_argument("--plot",action="store_true")
+    parser.add_argument("--hdf")
+    parser.add_argument("--snapname")
+    
     args,_ = parser.parse_known_args([arg for arg in sys.argv[1:] if arg not in ('-h', '--help')])
     env = make(args.env)
     env_spec = env.spec
@@ -32,7 +36,31 @@ if __name__ == "__main__":
         args.timestep_limit = env_spec.timestep_limit    
     cfg = args.__dict__
     np.random.seed(args.seed)
-    agent = agent_ctor(env.observation_space, env.action_space, cfg)
+#    agent = agent_ctor(env.observation_space, env.action_space, cfg)
+
+#    parser.add_argument("hdf")
+#    parser.add_argument("--timestep_limit",type=int)
+#    parser.add_argument("--snapname")
+#    args = parser.parse_args()
+
+    hdf2f = h5py.File(args.hdf,'r')
+
+    snapnames = hdf2f['agent_snapshots'].keys()
+    print "snapshots:\n",snapnames
+    if args.snapname is None: 
+        snapname = snapnames[-1]
+    elif args.snapname not in snapnames:
+        raise ValueError("Invalid snapshot name %s"%args.snapname)
+    else: 
+        snapname = args.snapname
+
+    agent = cPickle.loads(hdf2f['agent_snapshots'][snapname].value)
+	
+
+
+
+
+
     if args.use_hdf:
         hdf, diagnostics = prepare_h5_file(args)
     gym.logger.setLevel(logging.WARN)
@@ -42,6 +70,7 @@ if __name__ == "__main__":
         global COUNTER
         COUNTER += 1  
         # Print stats
+#        print "*********** Iteration %i ****************" % COUNTER
         print "*********** Iteration %i  %s ******************" % ( COUNTER , str(datetime.datetime.now()) )
         print tabulate(filter(lambda (k,v) : np.asarray(v).size==1, stats.items())) #pylint: disable=W0110
         # Store to hdf5
